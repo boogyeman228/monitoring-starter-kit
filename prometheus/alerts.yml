@@ -1,0 +1,51 @@
+groups:
+  - name: blackbox-availability
+    rules:
+      - alert: EndpointDown
+        # Also fires if the exporter itself cannot be scraped (up == 0), so a
+        # dead blackbox container does not silently look like "all quiet".
+        expr: |
+          probe_success{job=~"blackbox_(http|icmp)"} == 0
+          or
+          up{job=~"blackbox_(http|icmp)"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.instance }} is DOWN"
+          description: "The {{ $labels.job }} probe for {{ $labels.instance }} has been failing for more than 2 minutes."
+          runbook_url: "https://github.com/boogyeman228/monitoring-starter-kit/blob/main/runbooks/EndpointDown.md"
+
+      - alert: SlowResponse
+        expr: probe_duration_seconds{job="blackbox_http"} > 2 and probe_success{job="blackbox_http"} == 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.instance }} is responding slowly"
+          description: "Response time is {{ $value | humanizeDuration }} (threshold: 2s) and has been above the threshold for 5 minutes."
+          runbook_url: "https://github.com/boogyeman228/monitoring-starter-kit/blob/main/runbooks/SlowResponse.md"
+
+      - alert: SSLExpiringSoon
+        expr: |
+          (probe_ssl_earliest_cert_expiry{job="blackbox_http"} - time()) / 86400 < 14
+          and
+          probe_ssl_earliest_cert_expiry{job="blackbox_http"} > 0
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "SSL certificate for {{ $labels.instance }} expires soon"
+          description: "The certificate expires in {{ $value | humanize }} days (threshold: 14 days). Renew it before it expires."
+          runbook_url: "https://github.com/boogyeman228/monitoring-starter-kit/blob/main/runbooks/SSLExpiringSoon.md"
+
+      - alert: ProbeFlapping
+        # 4+ state changes in 15 minutes = at least two down/up cycles.
+        expr: changes(probe_success{job=~"blackbox_(http|icmp)"}[15m]) >= 4
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.instance }} is flapping"
+          description: "The probe changed state {{ $value | printf \"%.0f\" }} times in the last 15 minutes. The endpoint is failing intermittently."
+          runbook_url: "https://github.com/boogyeman228/monitoring-starter-kit/blob/main/runbooks/ProbeFlapping.md"

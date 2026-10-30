@@ -1,0 +1,10 @@
+{{ define "telegram.message" -}}
+<b>[{{ .Status | toUpper }}{{ if eq .Status "firing" }}: {{ .Alerts.Firing | len }}{{ end }}] {{ .GroupLabels.alertname }}</b>
+{{ range .Alerts }}
+<b>{{ .Labels.instance | html }}</b> ({{ .Labels.severity }})
+{{ .Annotations.summary | html }}
+{{ .Annotations.description | html }}
+{{ if .Annotations.runbook_url }}<a href="{{ .Annotations.runbook_url }}">Runbook</a>
+{{ end }}
+{{- end }}
+{{- end }}

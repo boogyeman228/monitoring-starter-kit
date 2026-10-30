@@ -1,0 +1,5 @@
+# Hosts to ping (ICMP). Use IPs or hostnames, no scheme.
+# Replace these public DNS resolvers with your own servers / routers.
+- targets:
+    - 1.1.1.1
+    - 8.8.8.8

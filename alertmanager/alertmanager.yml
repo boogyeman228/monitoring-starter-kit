@@ -1,0 +1,36 @@
+# The two __PLACEHOLDERS__ are filled from .env when the container starts
+# (see the alertmanager service in docker-compose.yml).
+global:
+  resolve_timeout: 5m
+
+templates:
+  - /etc/alertmanager/templates/*.tmpl
+
+route:
+  receiver: telegram
+  group_by: [alertname]
+  group_wait: 30s       # wait to batch alerts that fire together
+  group_interval: 5m    # min time between notifications for a changing group
+  repeat_interval: 4h   # re-notify about still-firing alerts
+  routes:
+    - matchers:
+        - severity="critical"
+      receiver: telegram
+      repeat_interval: 1h
+
+receivers:
+  - name: telegram
+    telegram_configs:
+      - bot_token: __TELEGRAM_BOT_TOKEN__
+        chat_id: __TELEGRAM_CHAT_ID__
+        parse_mode: HTML
+        send_resolved: true
+        message: '{{ template "telegram.message" . }}'
+
+# If a site is fully down, don't also page about it being slow or flapping.
+inhibit_rules:
+  - source_matchers:
+      - alertname="EndpointDown"
+    target_matchers:
+      - alertname=~"SlowResponse|ProbeFlapping"
+    equal: [instance]

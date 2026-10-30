@@ -1,0 +1,56 @@
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+scrape_configs:
+  # Self-monitoring of the stack.
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: blackbox_exporter
+    static_configs:
+      - targets: ["blackbox:9115"]
+
+  # Website / API checks. Add URLs to targets/http.yml (or run scripts/add-target.*).
+  # The file is re-read automatically - no Prometheus restart needed.
+  - job_name: blackbox_http
+    metrics_path: /probe
+    scrape_timeout: 15s
+    params:
+      module: [http_2xx]
+    file_sd_configs:
+      - files: ["/targets/http.yml"]
+        refresh_interval: 1m
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox:9115
+
+  # Host reachability via ICMP ping. Edit targets/icmp.yml.
+  - job_name: blackbox_icmp
+    metrics_path: /probe
+    scrape_timeout: 15s
+    params:
+      module: [icmp]
+    file_sd_configs:
+      - files: ["/targets/icmp.yml"]
+        refresh_interval: 1m
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox:9115

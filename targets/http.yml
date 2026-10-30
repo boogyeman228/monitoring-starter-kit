@@ -1,0 +1,7 @@
+# HTTP(S) endpoints to monitor. One list item per site.
+# Prometheus re-reads this file every minute - no restart required.
+# Add a URL with:  ./scripts/add-target.sh https://your-site.com
+#            or:  .\scripts\add-target.ps1 https://your-site.com
+# Remove the two example entries below once you add your own.
+- targets: ['https://example.com']
+- targets: ['https://example.org']

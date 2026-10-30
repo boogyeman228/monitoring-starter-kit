@@ -1,0 +1,21 @@
+modules:
+  # HTTP(S) check: succeeds on a 2xx after following redirects.
+  http_2xx:
+    prober: http
+    timeout: 10s
+    http:
+      method: GET
+      follow_redirects: true
+      preferred_ip_protocol: ip4
+      ip_protocol_fallback: true
+      valid_status_codes: [] # empty = any 2xx
+      headers:
+        User-Agent: "monitoring-starter-kit/blackbox"
+
+  # ICMP ping. Needs the NET_RAW capability (set in docker-compose.yml).
+  icmp:
+    prober: icmp
+    timeout: 5s
+    icmp:
+      preferred_ip_protocol: ip4
+      ip_protocol_fallback: true
